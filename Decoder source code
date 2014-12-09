@@ -1,0 +1,163 @@
+
+#include <project.h>
+#include <stdio.h>
+#include <stdint.h>
+#include <string.h>
+#include<time.h>
+#include <unistd.h>
+#include <device.h>
+
+
+
+//"dit is een tekst"
+//"test vijf"
+
+void mydelay(int milliseconds)
+{
+    long pause;
+    clock_t now,then;
+
+    pause = milliseconds*(CLOCKS_PER_SEC/1000);
+    now = then = clock();
+    while( (now-then) < pause )
+        now = clock();
+    return;
+}
+
+int main()
+{
+    /* Start SCB UART TX+RX operation */    
+    UART_Start();
+
+//    char alfabet[26][26]={a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z};
+    char myString[50];
+    char *myMorse[50];
+    uint16 A=0, B=0, C=0;
+    char temp;
+    char regul[50] = "... --- ...";
+    uint8 Z;
+
+    char regulartext[50]={' ',',','.','a','b','c','d','e','f','g',
+	                          'h','i','j','k','l','m','n','o','p','q','r',
+	                          's','t','u','v','w','x','y'};
+	char *morsecode[50]={" ","--..--",".-.-/>.-",".-","-...","-.-/>.","-..",".",
+	                        "..-.","--.","....","..",".---","-.-/>",".-..","--",
+	                        "-.","---",".--.","--.-/>",".-.","...","-","..-","...-",
+	                        ".--","-..-","-.-/>-"};
+   
+    int wasHigh = 0;
+    int isHigh = 0;
+    int charIndex = 0;
+    int hasAlreadyPutALetter = 0;
+    clock_t tRise, tFall;
+    int eoi = 0;/*
+    while(eoi == 0){
+       CyDelay(75);
+        if (isHigh == 1){
+            O1_Write(1);
+            wasHigh = 1;
+        } else {
+            O1_Write(0);
+            wasHigh = 0;
+        }
+        if(R1_Read() == 1){
+            if( wasHigh == 0){
+                //rising edge
+                tRise = clock()/ CLOCKS_PER_SEC;
+                //char testPrint[20];
+                //sprintf(testPrint, "rise: %d", tRise);
+                UART_UartPutString("1");
+            }
+            isHigh = 1;
+        } else {
+            if( wasHigh == 1){
+                //falling edge
+                tFall = clock()/ CLOCKS_PER_SEC;
+                //char testPrint[20];
+                //sprintf(testPrint, "fall: %d", tFall);
+                UART_UartPutString("0");
+            }
+            isHigh = 0;
+        }
+        
+        if(isHigh == 0){
+            if(wasHigh == 1){
+                //Falling Edge
+                //We just got a letter
+               double diff = (tFall - tRise) * 1000;
+                char testPrint[20];
+                sprintf(testPrint, "%f", diff);
+                UART_UartPutString(testPrint);
+               
+                if(diff > 200){
+                    regul[charIndex] = '-';
+                }else{
+                    regul[charIndex] = '.';
+                }
+                hasAlreadyPutALetter = 1;
+                charIndex++;
+            }
+        } else {
+            if(wasHigh == 0){
+                if(hasAlreadyPutALetter == 1){
+                    //Rising Edge
+                    //We just got a space
+                    double diff = (double)(tRise - tFall) * 1000;
+                    char testPrint[20];
+                    sprintf(testPrint, "%f", diff);
+                    UART_UartPutString(testPrint);
+                    
+                    if(diff > 600){
+                        regul[charIndex] = ' ';
+
+                    }else{
+                        regul[charIndex] = ' ';
+                    }
+                    charIndex++;
+                }
+            }
+        }
+        if(clock() > tFall + 1500*CLOCKS_PER_SEC/1000){
+            //Falling edge is more than 1 second ago
+            if(tRise < tFall){
+                //The edge hasn't gone up again
+                //The signal is off
+                eoi=1;
+                O1_Write(1);
+                
+            }
+        }
+    } */
+    
+    UART_UartPutString("DECRYPTING");
+    for(Z=0;Z<sizeof(regul);Z++){
+        //DO FOR EACH CHAR7
+        int firstDigit = Z;
+        int Y =0;
+        int endOfChar = 0;
+        while(endOfChar == 0){
+            char testChar = regul[Z+Y];
+            if(testChar == 0x20){
+                endOfChar = 1;
+            }
+            Y++;
+        }
+        int lastDigit = Y+Z;
+        char subString[15];
+        memcpy(subString,regul[Z],Y);
+
+        UART_UartPutChar(subString);
+        for(B=0;B < sizeof(morsecode);B++){
+            if(subString == morsecode[B]){
+                myString[Z] = regulartext[B];
+                UART_UartPutString(regulartext[B]);
+            }
+        }
+        Z+=Y;
+    }
+
+    
+	/* Transmit String through UART TX Line */
+    UART_UartPutString("Ontvangen code: \n");
+    UART_UartPutString(myString);
+}
